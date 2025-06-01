@@ -4,6 +4,9 @@ package org.psionicgeek.linkedin.postservice.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.psionicgeek.linkedin.postservice.auth.UserContextHolder;
+import org.psionicgeek.linkedin.postservice.clients.ConnectionsClient;
+import org.psionicgeek.linkedin.postservice.dto.PersonDto;
 import org.psionicgeek.linkedin.postservice.dto.PostCreateRequestDto;
 import org.psionicgeek.linkedin.postservice.dto.PostDto;
 import org.psionicgeek.linkedin.postservice.entity.Post;
@@ -20,6 +23,7 @@ public class PostService {
 
     private final PostsRepository postsRepository;
     private final ModelMapper  modelMapper;
+    private final ConnectionsClient connectionsClient;
 
 
     public PostDto createPost(PostCreateRequestDto postCreateRequestDto, Long userId) {
@@ -32,6 +36,17 @@ public class PostService {
     }
 
     public PostDto getPostById(Long postId) {
+
+        Long userId = UserContextHolder.getCurrentUserId();
+        List<PersonDto> firstConnections = connectionsClient.getFirstDegreeConnections();
+        if (firstConnections.isEmpty()) {
+            log.warn("No first degree connections found for user with ID: {}", userId);
+            // throw new ResourceNotFoundException("No first degree connections found for user with ID: " + userId);
+        } else{
+
+            log.info("First degree connections found for user with ID: {}", userId);
+            log.info("First degree connections: {}", firstConnections);
+    }
         Post post = postsRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post not found with ID: " + postId));
         log.info("Post retrieved with ID: {}", post.getId());
         return modelMapper.map(post, PostDto.class);
