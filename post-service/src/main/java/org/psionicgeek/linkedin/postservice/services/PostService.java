@@ -10,8 +10,10 @@ import org.psionicgeek.linkedin.postservice.dto.PersonDto;
 import org.psionicgeek.linkedin.postservice.dto.PostCreateRequestDto;
 import org.psionicgeek.linkedin.postservice.dto.PostDto;
 import org.psionicgeek.linkedin.postservice.entity.Post;
+import org.psionicgeek.linkedin.postservice.event.PostCreatedEvent;
 import org.psionicgeek.linkedin.postservice.exception.ResourceNotFoundException;
 import org.psionicgeek.linkedin.postservice.repository.PostsRepository;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,14 +26,22 @@ public class PostService {
     private final PostsRepository postsRepository;
     private final ModelMapper  modelMapper;
     private final ConnectionsClient connectionsClient;
+    private final KafkaTemplate<Long, PostCreatedEvent> kafkaTemplate;
 
 
-    public PostDto createPost(PostCreateRequestDto postCreateRequestDto, Long userId) {
-
+    public PostDto createPost(PostCreateRequestDto postCreateRequestDto) {
+        Long userId = UserContextHolder.getCurrentUserId();
         Post post = modelMapper.map(postCreateRequestDto, Post.class);
         post.setUserId(userId);
         Post savedPost = postsRepository.save(post);
         log.info("Post created with ID: {}", savedPost.getId());
+
+        PostCreatedEvent postCreatedEvent = PostCreatedEvent.builder()
+                .creatorId(userId)
+                .content(savedPost.getContent())
+                .postId(savedPost.getId())
+                .build();
+        kafkaTemplate.send("post-created-topic", postCreatedEvent);
         return modelMapper.map(savedPost, PostDto.class);
     }
 

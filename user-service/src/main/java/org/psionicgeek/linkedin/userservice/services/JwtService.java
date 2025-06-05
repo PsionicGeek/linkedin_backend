@@ -15,6 +15,9 @@ import java.util.Date;
 @Service
 public class JwtService {
 
+    // JWT token expiration time: 10 minutes
+    private static final long JWT_TOKEN_EXPIRATION_TIME_MS = 1000 * 60 * 100; // 10 minutes
+
     @Value("${jwt.secretKey}")
     private String jwtSecretKey;
 
@@ -27,7 +30,7 @@ public class JwtService {
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000*60*10))
+                .expiration(new Date(System.currentTimeMillis() + JWT_TOKEN_EXPIRATION_TIME_MS))
                 .signWith(getSecretKey())
                 .compact();
     }

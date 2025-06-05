@@ -28,7 +28,7 @@ public class PostsController {
     public ResponseEntity<PostDto> createPost(@RequestBody PostCreateRequestDto postCreateRequestDto, HttpServletRequest httpServletRequest){
 
 
-        PostDto createdPost = postService.createPost(postCreateRequestDto, 1L);
+        PostDto createdPost = postService.createPost(postCreateRequestDto);
 
         return new ResponseEntity<>(createdPost, HttpStatus.CREATED);
     }
